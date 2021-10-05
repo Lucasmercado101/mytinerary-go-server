@@ -107,11 +107,68 @@ func citiesEndpoint(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func cityEndpoint(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+
+	switch r.Method {
+	case "GET":
+		id := r.URL.Path[len("/cities/"):]
+		log.Printf("id: %s\n", id)
+
+		row := db.QueryRow("SELECT name, id FROM cities WHERE id = $1", id)
+		var city City
+		err := row.Scan(&city.Name, &city.Id)
+		if err == sql.ErrNoRows {
+			http.Error(w, "Not found", http.StatusNotFound)
+			return
+		}
+		if err != nil {
+			panic(err)
+		}
+
+		json.NewEncoder(w).Encode(city)
+
+		// case "PUT":
+		// 	id := r.URL.Path[len("/cities/"):]
+		// 	log.Printf("id: %s\n", id)
+
+		// 	var city City
+		// 	decoder := json.NewDecoder(r.Body)
+		// 	if err := decoder.Decode(&city); err != nil {
+		// 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		// 		return
+		// 	}
+		// 	log.Printf("City: %+v", city)
+
+		// 	_, err := db.Exec("UPDATE cities SET name = $1 WHERE id = $2", city.Name, id)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+
+		// 	w.WriteHeader(http.StatusNoContent)
+
+		// case "DELETE":
+		// 	id := r.URL.Path[len("/cities/"):]
+		// 	log.Printf("id: %s\n", id)
+
+		// 	_, err := db.Exec("DELETE FROM cities WHERE id = $1", id)
+		// 	if err != nil {
+		// 		panic(err)
+		// 	}
+
+		// 	w.WriteHeader(http.StatusNoContent)
+	}
+}
+
 func main() {
 	dbInit()
 	defer db.Close()
 
 	http.HandleFunc("/cities", citiesEndpoint)
+	http.HandleFunc("/cities/", cityEndpoint)
 
 	log.Fatal(http.ListenAndServe(":8001", nil))
 
