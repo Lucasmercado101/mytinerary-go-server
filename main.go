@@ -25,32 +25,6 @@ const (
 
 var db *sql.DB
 
-func dbInit() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
-		"password=%s dbname=%s sslmode=disable",
-		host, port, user, password, dbname)
-	newDb, err := sql.Open("postgres", psqlInfo)
-	db = newDb
-	if err != nil {
-		panic(err)
-	}
-
-	err = db.Ping()
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Successfully connected!")
-
-	db.Exec(`
-	CREATE TABLE IF NOT EXISTS cities
-	(
-		id SERIAL NOT NULL PRIMARY KEY,
-		name VARCHAR(40)
-	)
-	`)
-}
-
 func citiesEndpoint(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -131,25 +105,28 @@ func cityEndpoint(w http.ResponseWriter, r *http.Request) {
 
 		json.NewEncoder(w).Encode(city)
 
-		// case "PUT":
-		// 	id := r.URL.Path[len("/cities/"):]
-		// 	log.Printf("id: %s\n", id)
+	case "PUT":
+		// full update
+		id := r.URL.Path[len("/cities/"):]
+		log.Printf("id: %s\n", id)
 
-		// 	var city City
-		// 	decoder := json.NewDecoder(r.Body)
-		// 	if err := decoder.Decode(&city); err != nil {
-		// 		http.Error(w, "Invalid JSON", http.StatusBadRequest)
-		// 		return
-		// 	}
-		// 	log.Printf("City: %+v", city)
+		var city City
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&city); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+		log.Printf("City: %+v", city)
 
-		// 	_, err := db.Exec("UPDATE cities SET name = $1 WHERE id = $2", city.Name, id)
-		// 	if err != nil {
-		// 		panic(err)
-		// 	}
+		_, err := db.Exec("UPDATE cities SET name = $1 WHERE id = $2", city.Name, id)
+		if err != nil {
+			panic(err)
+		}
 
-		// 	w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
 
+		// case "PATCH":
+		// partial update
 		// case "DELETE":
 		// 	id := r.URL.Path[len("/cities/"):]
 		// 	log.Printf("id: %s\n", id)
@@ -164,7 +141,21 @@ func cityEndpoint(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	dbInit()
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+	newDb, err := sql.Open("postgres", psqlInfo)
+	db = newDb
+	if err != nil {
+		panic(err)
+	}
+
+	err = db.Ping()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("Successfully connected!")
 	defer db.Close()
 
 	http.HandleFunc("/cities", citiesEndpoint)
