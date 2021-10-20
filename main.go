@@ -158,9 +158,18 @@ func main() {
 	fmt.Println("Successfully connected!")
 	defer db.Close()
 
-	http.HandleFunc("/cities", citiesEndpoint)
-	http.HandleFunc("/cities/", cityEndpoint)
+	http.HandleFunc("/cities", returnsJSONMiddleware(citiesEndpoint))
+	http.HandleFunc("/cities/", returnsJSONMiddleware(cityEndpoint))
 
 	log.Fatal(http.ListenAndServe(":8001", nil))
 
+}
+
+type endpoint func(http.ResponseWriter, *http.Request)
+
+func returnsJSONMiddleware(fn endpoint) endpoint {
+	return func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		fn(w, r)
+	}
 }
