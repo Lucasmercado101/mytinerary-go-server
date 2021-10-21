@@ -94,16 +94,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	Db = newDb
 	database.Db = newDb
 
-	err = Db.Ping()
+	err = newDb.Ping()
 	if err != nil {
 		panic(err)
 	}
 
 	fmt.Println("Successfully connected!")
-	defer Db.Close()
+	defer newDb.Close()
 
 	http.HandleFunc("/cities", returnsJSONMiddleware(cities.CitiesEndpoint))
 	http.HandleFunc("/cities/", returnsJSONMiddleware(cityEndpoint))
