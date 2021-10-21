@@ -70,16 +70,16 @@ func cityEndpoint(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusNoContent)
 
-		// case "DELETE":
-		// 	id := r.URL.Path[len("/cities/"):]
-		// 	log.Printf("id: %s\n", id)
+	case "DELETE":
+		id := r.URL.Path[len("/cities/"):]
+		log.Printf("id: %s\n", id)
 
-		// 	_, err := Db.Exec("DELETE FROM cities WHERE id = $1", id)
-		// 	if err != nil {
-		// 		panic(err)
-		// 	}
+		_, err := Db.Exec("DELETE FROM cities WHERE id = $1", id)
+		if err != nil {
+			panic(err)
+		}
 
-		// 	w.WriteHeader(http.StatusNoContent)
+		w.WriteHeader(http.StatusNoContent)
 	}
 }
 
