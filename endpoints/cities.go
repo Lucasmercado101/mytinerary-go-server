@@ -52,18 +52,17 @@ func CitiesEndpoint(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var city City
-		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&city); err != nil {
+		if err := json.NewDecoder(r.Body).Decode(&city); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return
 		}
 		log.Printf("City: %+v", city)
 
-		_, err := database.Db.Exec("INSERT INTO cities (name) VALUES ($1)", city.Name)
+		err := database.Db.QueryRow("INSERT INTO cities (name) VALUES ($1) RETURNING *", city.Name).Scan(&city.Id, &city.Name)
 		if err != nil {
 			panic(err)
 		}
 
-		// w.WriteHeader(http.StatusCreated)
+		json.NewEncoder(w).Encode(city)
 	}
 }
