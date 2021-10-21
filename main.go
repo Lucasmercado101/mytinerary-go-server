@@ -52,7 +52,6 @@ func cityEndpoint(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(city)
 
 	case "PUT":
-		// full update
 		id := r.URL.Path[len("/cities/"):]
 		log.Printf("id: %s\n", id)
 
@@ -71,8 +70,6 @@ func cityEndpoint(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusNoContent)
 
-		// case "PATCH":
-		// partial update
 		// case "DELETE":
 		// 	id := r.URL.Path[len("/cities/"):]
 		// 	log.Printf("id: %s\n", id)
@@ -94,6 +91,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	Db = newDb
 	database.Db = newDb
 
 	err = newDb.Ping()
