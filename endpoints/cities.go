@@ -7,11 +7,6 @@ import (
 	"quickstart/database"
 )
 
-type City struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
-}
-
 func Cities(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
@@ -26,9 +21,9 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 		}
 		defer rows.Close()
 
-		var cities []City
+		var cities []CityJSON
 		for rows.Next() {
-			var city City
+			var city CityJSON
 			if err := rows.Scan(&city.Name, &city.Id); err != nil {
 				panic(err)
 			}
@@ -51,7 +46,7 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		var city City
+		var city CityJSON
 		if err := json.NewDecoder(r.Body).Decode(&city); err != nil {
 			http.Error(w, "Invalid JSON", http.StatusBadRequest)
 			return

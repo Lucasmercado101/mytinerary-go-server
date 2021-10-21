@@ -2,7 +2,6 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -27,62 +26,6 @@ const (
 
 var Db *sql.DB
 
-func cityEndpoint(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
-
-	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-
-	switch r.Method {
-	case "GET":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
-
-		row := Db.QueryRow("SELECT name, id FROM cities WHERE id = $1", id)
-		var city City
-		err := row.Scan(&city.Name, &city.Id)
-		if err == sql.ErrNoRows {
-			http.Error(w, "Not found", http.StatusNotFound)
-			return
-		}
-		if err != nil {
-			panic(err)
-		}
-
-		json.NewEncoder(w).Encode(city)
-
-	case "PUT":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
-
-		var city City
-		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&city); err != nil {
-			http.Error(w, "Invalid JSON", http.StatusBadRequest)
-			return
-		}
-		log.Printf("City: %+v", city)
-
-		_, err := Db.Exec("UPDATE cities SET name = $1 WHERE id = $2", city.Name, id)
-		if err != nil {
-			panic(err)
-		}
-
-		w.WriteHeader(http.StatusNoContent)
-
-	case "DELETE":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
-
-		_, err := Db.Exec("DELETE FROM cities WHERE id = $1", id)
-		if err != nil {
-			panic(err)
-		}
-
-		w.WriteHeader(http.StatusNoContent)
-	}
-}
-
 func main() {
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
@@ -103,7 +46,7 @@ func main() {
 	defer newDb.Close()
 
 	http.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
-	http.HandleFunc("/cities/", returnsJSONMiddleware(cityEndpoint))
+	http.HandleFunc("/cities/", returnsJSONMiddleware(endpoints.City))
 
 	log.Fatal(http.ListenAndServe(":8001", nil))
 
