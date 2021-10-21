@@ -7,7 +7,7 @@ import (
 	"log"
 	"net/http"
 	"quickstart/database"
-	cities "quickstart/endpoints"
+	"quickstart/endpoints"
 
 	_ "github.com/lib/pq"
 )
@@ -102,7 +102,7 @@ func main() {
 	fmt.Println("Successfully connected!")
 	defer newDb.Close()
 
-	http.HandleFunc("/cities", returnsJSONMiddleware(cities.CitiesEndpoint))
+	http.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
 	http.HandleFunc("/cities/", returnsJSONMiddleware(cityEndpoint))
 
 	log.Fatal(http.ListenAndServe(":8001", nil))

@@ -1,4 +1,4 @@
-package cities
+package endpoints
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ type City struct {
 	Name string `json:"name"`
 }
 
-func CitiesEndpoint(w http.ResponseWriter, r *http.Request) {
+func Cities(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
