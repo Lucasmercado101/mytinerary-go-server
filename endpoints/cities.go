@@ -15,7 +15,7 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 
 	switch r.Method {
 	case "GET":
-		rows, err := database.Db.Query("SELECT name, id FROM cities")
+		rows, err := database.Db.Query("SELECT * FROM city")
 		if err != nil {
 			panic(err)
 		}
@@ -24,7 +24,7 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 		var cities []CityJSON
 		for rows.Next() {
 			var city CityJSON
-			if err := rows.Scan(&city.Name, &city.Id); err != nil {
+			if err := rows.Scan(&city.Id, &city.Name, &city.Country); err != nil {
 				panic(err)
 			}
 			cities = append(cities, city)
@@ -53,7 +53,7 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("City: %+v", city)
 
-		err := database.Db.QueryRow("INSERT INTO cities (name) VALUES ($1) RETURNING *", city.Name).Scan(&city.Id, &city.Name)
+		err := database.Db.QueryRow("INSERT INTO city (name, country) VALUES ($1, $2) RETURNING *", city.Name, city.Country).Scan(&city.Id, &city.Name, &city.Country)
 		if err != nil {
 			panic(err)
 		}

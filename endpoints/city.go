@@ -6,27 +6,29 @@ import (
 	"log"
 	"net/http"
 	"quickstart/database"
+
+	"github.com/gorilla/mux"
 )
 
 type CityJSON struct {
-	Id   string `json:"id"`
-	Name string `json:"name"`
+	Id      string `json:"id"`
+	Name    string `json:"name"`
+	Country string `json:"country"`
 }
 
 func City(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
 
+	id := mux.Vars(r)["cityId"]
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
 	switch r.Method {
 	case "GET":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
 
-		row := database.Db.QueryRow("SELECT name, id FROM cities WHERE id = $1", id)
+		row := database.Db.QueryRow("SELECT * FROM city WHERE id = $1", id)
 		var city CityJSON
-		err := row.Scan(&city.Name, &city.Id)
+		err := row.Scan(&city.Id, &city.Name, &city.Country)
 		if err == sql.ErrNoRows {
 			http.Error(w, "Not found", http.StatusNotFound)
 			return
@@ -38,8 +40,6 @@ func City(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(city)
 
 	case "PUT":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
 
 		var city CityJSON
 		decoder := json.NewDecoder(r.Body)
@@ -49,7 +49,13 @@ func City(w http.ResponseWriter, r *http.Request) {
 		}
 		log.Printf("City: %+v", city)
 
-		err := database.Db.QueryRow("UPDATE cities SET name = $1 WHERE id = $2 RETURNING *", city.Name, id).Scan(&city.Id, &city.Name)
+		err := database.Db.QueryRow(`
+		UPDATE city
+		SET name = $1, country = $2
+		WHERE id = $3
+		RETURNING *
+		`, city.Name, city.Country, id).Scan(&city.Id, &city.Name, &city.Country)
+
 		if err != nil {
 			panic(err)
 		}
@@ -57,10 +63,8 @@ func City(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(city)
 
 	case "DELETE":
-		id := r.URL.Path[len("/cities/"):]
-		log.Printf("id: %s\n", id)
 
-		_, err := database.Db.Exec("DELETE FROM cities WHERE id = $1", id)
+		_, err := database.Db.Exec("DELETE FROM city WHERE id = $1", id)
 		if err != nil {
 			panic(err)
 		}

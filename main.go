@@ -8,6 +8,7 @@ import (
 	"quickstart/database"
 	"quickstart/endpoints"
 
+	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
 
@@ -45,8 +46,10 @@ func main() {
 	fmt.Println("Successfully connected!")
 	defer newDb.Close()
 
-	http.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
-	http.HandleFunc("/cities/", returnsJSONMiddleware(endpoints.City))
+	r := mux.NewRouter()
+	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
+	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
+	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":8001", nil))
 
