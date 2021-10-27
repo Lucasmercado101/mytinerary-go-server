@@ -49,7 +49,7 @@ func main() {
 	r := mux.NewRouter()
 	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
 	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
-	// r.HandleFunc("/auth/login", endpoints.Login)
+	r.HandleFunc("/auth/login", endpoints.Login)
 	r.HandleFunc("/auth/register", endpoints.Register)
 
 	http.Handle("/", r)

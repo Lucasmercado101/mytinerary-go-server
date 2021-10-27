@@ -3,6 +3,7 @@ package endpoints
 import (
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 
@@ -26,26 +27,32 @@ func checkPasswordHash(password, hash string) bool {
 	return err == nil
 }
 
-// func Login(w http.ResponseWriter, r *http.Request) {
-// 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+func Login(w http.ResponseWriter, r *http.Request) {
+	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
-// 	var creds AuthCreds
-// 	err := json.NewDecoder(r.Body).Decode(&creds)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Printf("%v", creds)
-// 	hash, err := hashPassword(creds.Password)
-// 	if err != nil {
-// 		panic(err)
-// 	}
-// 	fmt.Printf("%v", hash)
-// 	if checkPasswordHash(creds.Password, hash) {
-// 		fmt.Println("Password is correct")
-// 	} else {
-// 		fmt.Println("Password is incorrect")
-// 	}
-// }
+	var creds AuthCreds
+	err := json.NewDecoder(r.Body).Decode(&creds)
+	if err != nil {
+		panic(err)
+	}
+
+	var hashedDBPass string
+	err = database.Db.QueryRow("SELECT password FROM users WHERE username = $1", creds.Username).Scan(&hashedDBPass)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			w.WriteHeader(http.StatusNotFound)
+			return
+		}
+		panic(err)
+	}
+
+	if checkPasswordHash(creds.Password, hashedDBPass) {
+		// TODO: cookie
+		fmt.Println("Password is correct")
+	} else {
+		w.WriteHeader(http.StatusNotFound)
+	}
+}
 
 func Register(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
