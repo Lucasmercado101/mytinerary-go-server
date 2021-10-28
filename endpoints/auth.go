@@ -18,6 +18,8 @@ type AuthCreds struct {
 	Password string `json:"password"`
 }
 
+const cookieMaxAge = time.Minute * 30
+
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
 	return string(bytes), err
@@ -50,14 +52,17 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	var expirationTime = time.Now().Add(cookieMaxAge)
+
 	if checkPasswordHash(creds.Password, dbUser.password) {
 		cookie := http.Cookie{
-			Name:  "sid",
-			Value: uuid.New().String(),
-			Path:  "/",
+			Name:    "sid",
+			Value:   uuid.New().String(),
+			Path:    "/",
+			Expires: expirationTime,
 		}
 		http.SetCookie(w, &cookie)
-		_, err := database.Db.Exec("INSERT INTO sessions (user_id, session_id, expiration) VALUES ($1, $2, $3)", dbUser.id, cookie.Value, time.Now().Add(time.Minute*2))
+		_, err := database.Db.Exec("INSERT INTO sessions (user_id, session_id, expiration) VALUES ($1, $2, $3)", dbUser.id, cookie.Value, expirationTime)
 		if err != nil {
 			log.Println(err)
 			w.WriteHeader(http.StatusInternalServerError)
