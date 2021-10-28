@@ -139,3 +139,28 @@ func IsLoggedIn(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
 	}
 }
+
+func Logout(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sid")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			log.Printf("no cookie")
+			w.WriteHeader(http.StatusOK)
+			return
+		}
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	sessionId := cookie.Value
+	_, err = database.Db.Exec("DELETE FROM sessions WHERE session_id = $1", sessionId)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	cookie.MaxAge = -1
+	http.SetCookie(w, cookie)
+}
