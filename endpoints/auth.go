@@ -60,6 +60,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			Value:   uuid.New().String(),
 			Path:    "/",
 			Expires: expirationTime,
+			MaxAge:  int(cookieMaxAge.Seconds()),
 		}
 		http.SetCookie(w, &cookie)
 		_, err := database.Db.Exec("INSERT INTO sessions (user_id, session_id, expiration) VALUES ($1, $2, $3)", dbUser.id, cookie.Value, expirationTime)
