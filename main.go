@@ -47,8 +47,21 @@ func main() {
 	defer newDb.Close()
 
 	r := mux.NewRouter()
+
 	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
 	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
+
+	// enable CORS
+	r.Use(func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
+			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+			w.Header().Set("Access-Control-Allow-Headers", "Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+			next.ServeHTTP(w, r)
+		})
+	})
+
 	r.HandleFunc("/auth/login", endpoints.Login)
 	r.HandleFunc("/auth/register", endpoints.Register)
 	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
