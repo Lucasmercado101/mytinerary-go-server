@@ -51,7 +51,7 @@ func main() {
 	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
 	r.HandleFunc("/auth/login", endpoints.Login)
 	r.HandleFunc("/auth/register", endpoints.Register)
-	r.HandleFunc("/isLoggedIn", endpoints.IsLoggedIn)
+	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
 	http.Handle("/", r)
