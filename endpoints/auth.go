@@ -94,3 +94,48 @@ func Register(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 }
+
+func IsLoggedIn(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("sid")
+	if err != nil {
+		if err == http.ErrNoCookie {
+			log.Printf("no cookie")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	sessionId := cookie.Value
+	var session struct {
+		Id         string
+		user_id    string
+		session_id string
+		expiration time.Time
+	}
+	err = database.Db.QueryRow("SELECT * FROM sessions WHERE session_id = $1", sessionId).Scan(&session.Id, &session.user_id, &session.session_id, &session.expiration)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			log.Printf("no session in db")
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+		log.Println(err)
+		return
+	}
+
+	if session.expiration.Before(time.Now()) {
+		log.Printf("session expired, deleting session from db")
+		w.WriteHeader(http.StatusUnauthorized)
+		//delete the session if it exists in the db
+		_, err := database.Db.Exec("DELETE FROM sessions WHERE session_id = $1", sessionId)
+		if err != nil {
+			log.Println(err)
+		}
+		return
+	} else {
+		w.WriteHeader(http.StatusOK)
+	}
+}
