@@ -3,8 +3,12 @@ package endpoints
 import (
 	"database/sql"
 	"encoding/json"
+	"io"
 	"log"
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"time"
 
 	"quickstart/database"
@@ -77,26 +81,83 @@ func Login(w http.ResponseWriter, r *http.Request) {
 func Register(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
-	var creds AuthCreds
-	err := json.NewDecoder(r.Body).Decode(&creds)
+	mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 	if err != nil {
-		panic(err)
+		w.WriteHeader(http.StatusBadRequest)
 	}
 
-	err = database.Db.QueryRow("SELECT id FROM users WHERE username = $1", creds.Username).Scan(&AuthCreds{})
-	if err != nil {
-		if err == sql.ErrNoRows { // user doesn't exist so we can create it
-			hash, err := hashPassword(creds.Password)
-			if err != nil {
-				panic(err)
-			}
-			_, err = database.Db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", creds.Username, hash)
+	if mediaType == "multipart/form-data" {
 
+		// max size 25MB
+		r.ParseMultipartForm(25 * 1024 * 1024)
+
+		pfpFile, header, err := r.FormFile("profilePic")
+		if err != nil {
+			log.Fatalln(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer pfpFile.Close()
+
+		cwd, err := os.Getwd()
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		imagesDir := filepath.Join(cwd, "static", "images")
+
+		// create folder if it doesn't exist
+		if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+			err = os.MkdirAll(imagesDir, 0755)
 			if err != nil {
-				panic(err)
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
 			}
-		} else { // user exists
-			w.WriteHeader(http.StatusForbidden) // https://stackoverflow.com/a/34458500
+		}
+
+		storedImagePath := filepath.Join(imagesDir, uuid.New().String()+filepath.Ext(header.Filename))
+
+		f, err := os.Create(storedImagePath)
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer f.Close()
+
+		_, err = io.Copy(f, pfpFile)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	} else {
+
+		var creds AuthCreds
+		err = json.NewDecoder(r.Body).Decode(&creds)
+		if err != nil {
+			panic(err)
+		}
+
+		err = database.Db.QueryRow("SELECT id FROM users WHERE username = $1", creds.Username).Scan(&AuthCreds{})
+		if err != nil {
+			if err == sql.ErrNoRows { // user doesn't exist so we can create it
+				hash, err := hashPassword(creds.Password)
+				if err != nil {
+					panic(err)
+				}
+				_, err = database.Db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", creds.Username, hash)
+
+				if err != nil {
+					panic(err)
+				}
+			} else { // user exists
+				w.WriteHeader(http.StatusForbidden) // https://stackoverflow.com/a/34458500
+			}
 		}
 	}
 }
