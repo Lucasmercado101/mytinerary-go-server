@@ -48,6 +48,9 @@ func main() {
 
 	r := mux.NewRouter()
 
+	s := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/static/").Handler(s)
+
 	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
 	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
 
