@@ -87,54 +87,100 @@ func Register(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if mediaType == "multipart/form-data" {
+		w.Header().Set("Content-Type", "application/json")
 
 		// max size 25MB
 		r.ParseMultipartForm(25 * 1024 * 1024)
 
-		pfpFile, header, err := r.FormFile("profilePic")
-		if err != nil {
-			log.Fatalln(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
+		username := r.FormValue("username")
+
+		// check if username is already taken
+		var dbUser struct {
+			id string
 		}
-		defer pfpFile.Close()
-
-		cwd, err := os.Getwd()
+		err = database.Db.QueryRow("SELECT id FROM users WHERE username = $1", username).Scan(&dbUser.id)
 		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
+			if err == sql.ErrNoRows {
 
-		imagesDir := filepath.Join(cwd, "static", "images")
+				password := r.FormValue("password")
 
-		// create folder if it doesn't exist
-		if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
-			err = os.MkdirAll(imagesDir, 0755)
-			if err != nil {
-				log.Println(err)
+				pfpFile, header, err := r.FormFile("profilePic")
+				if err != nil {
+					log.Fatalln(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				defer pfpFile.Close()
+
+				cwd, err := os.Getwd()
+				if err != nil {
+					log.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				imagesDir := filepath.Join(cwd, "static", "images")
+
+				// create folder if it doesn't exist
+				if _, err := os.Stat(imagesDir); os.IsNotExist(err) {
+					err = os.MkdirAll(imagesDir, 0755)
+					if err != nil {
+						log.Println(err)
+						w.WriteHeader(http.StatusInternalServerError)
+					}
+				}
+
+				storedImagePath := filepath.Join(imagesDir, uuid.New().String()+filepath.Ext(header.Filename))
+
+				f, err := os.Create(storedImagePath)
+				if err != nil {
+					log.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				defer f.Close()
+
+				_, err = io.Copy(f, pfpFile)
+
+				if err != nil {
+					// delete file
+					os.Remove(storedImagePath)
+					log.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				// begin storing in DB
+				hash, err := hashPassword(password)
+				if err != nil {
+					// delete file
+					os.Remove(storedImagePath)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+				_, err = database.Db.Exec("INSERT INTO users (username, password, profile_pic) VALUES ($1, $2, $3)", username, hash, storedImagePath)
+
+				if err != nil {
+					// delete file
+					os.Remove(storedImagePath)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
+				}
+
+				json.NewEncoder(w).Encode(struct {
+					Username   string `json:"username"`
+					ProfilePic string `json:"profilePic"`
+				}{
+					Username:   username,
+					ProfilePic: storedImagePath,
+				})
+
+			} else {
 				w.WriteHeader(http.StatusInternalServerError)
 			}
+		} else {
+			w.WriteHeader(http.StatusConflict)
 		}
-
-		storedImagePath := filepath.Join(imagesDir, uuid.New().String()+filepath.Ext(header.Filename))
-
-		f, err := os.Create(storedImagePath)
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		defer f.Close()
-
-		_, err = io.Copy(f, pfpFile)
-
-		if err != nil {
-			log.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-
 	} else {
 
 		var creds AuthCreds
@@ -148,12 +194,14 @@ func Register(w http.ResponseWriter, r *http.Request) {
 			if err == sql.ErrNoRows { // user doesn't exist so we can create it
 				hash, err := hashPassword(creds.Password)
 				if err != nil {
-					panic(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
 				}
 				_, err = database.Db.Exec("INSERT INTO users (username, password) VALUES ($1, $2)", creds.Username, hash)
 
 				if err != nil {
-					panic(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					return
 				}
 			} else { // user exists
 				w.WriteHeader(http.StatusForbidden) // https://stackoverflow.com/a/34458500
