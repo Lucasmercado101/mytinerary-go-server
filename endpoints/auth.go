@@ -44,10 +44,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbUser struct {
-		id       string
-		password string
+		id          string
+		password    string
+		profile_pic sql.NullString
 	}
-	err = database.Db.QueryRow("SELECT id, password FROM users WHERE username = $1", creds.Username).Scan(&dbUser.id, &dbUser.password)
+	err = database.Db.QueryRow("SELECT id, password, profile_pic FROM users WHERE username = $1", creds.Username).Scan(&dbUser.id, &dbUser.password, &dbUser.profile_pic)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			w.WriteHeader(http.StatusNotFound)
@@ -73,6 +74,20 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
+
+		var userDTO struct {
+			Username    string `json:"username"`
+			Profile_pic string `json:"profile_pic"`
+		}
+		userDTO.Username = creds.Username
+		if dbUser.profile_pic.Valid {
+			userDTO.Profile_pic = dbUser.profile_pic.String
+		} else {
+			userDTO.Profile_pic = ""
+		}
+
+		json.NewEncoder(w).Encode(userDTO)
+
 	} else {
 		w.WriteHeader(http.StatusNotFound)
 	}
