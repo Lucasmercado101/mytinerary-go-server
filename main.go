@@ -60,6 +60,7 @@ func main() {
 			// TODO: https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#the_http_response_headers add the Vary header
 			w.Header().Set("Access-Control-Allow-Origin", r.Header.Get("Origin"))
 			w.Header().Set("Access-Control-Allow-Credentials", "true")
+			// if Preflight
 			if r.Method == "OPTIONS" {
 				w.Header().Set("Access-Control-Max-Age", fmt.Sprintf("%v", (60*5)))
 				w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
