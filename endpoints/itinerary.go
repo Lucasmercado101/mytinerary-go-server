@@ -4,6 +4,9 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"quickstart/database"
+
+	"github.com/lib/pq"
 )
 
 type itineraryInput struct {
@@ -56,4 +59,34 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if len(input.Tags) > 3 {
+		http.Error(w, "Too many tags", http.StatusBadRequest)
+		return
+	}
+
+	_, err = database.Db.Exec(`
+	INSERT INTO itinerary (
+        title,
+        creator,
+        time,
+        price,
+        activities,
+        hashtags,
+        city_id
+    )
+	VALUES ($1, $2, $3, $4, $5, $6, $7)
+`,
+		input.Title,
+		input.AuthorId,
+		input.Duration,
+		input.Price,
+		pq.Array(input.Activities),
+		pq.Array(input.Tags),
+		input.CityId)
+
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 }
