@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS ITINERARY (
     creator INTEGER REFERENCES USERS(id) NOT NULL,
     time VARCHAR(40) NOT NULL,
     price VARCHAR(40) NOT NULL,
-    activities VARCHAR(40) NOT NULL,
+    activities VARCHAR(40) [50] NOT NULL,
     hashtags VARCHAR(40) [3],
     city_id INTEGER NOT NULL REFERENCES CITY(id)
 );
