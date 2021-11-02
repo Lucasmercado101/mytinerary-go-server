@@ -22,7 +22,7 @@ type AuthCreds struct {
 	Password string `json:"password"`
 }
 
-const cookieMaxAge = time.Minute * 30
+const cookieMaxAge = time.Hour * 24
 
 func hashPassword(password string) (string, error) {
 	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
