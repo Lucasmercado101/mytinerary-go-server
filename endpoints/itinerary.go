@@ -19,7 +19,12 @@ type itineraryInput struct {
 func Itinerary(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	var input itineraryInput
-	json.NewDecoder(r.Body).Decode(&input)
+	err := json.NewDecoder(r.Body).Decode(&input)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	// Validation
 	if input.CityId == nil {
