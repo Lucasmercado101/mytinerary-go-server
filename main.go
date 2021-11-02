@@ -78,6 +78,8 @@ func main() {
 	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
+	r.HandleFunc("/itinerary", endpoints.Itinerary).Methods("POST")
+
 	http.Handle("/", r)
 
 	log.Fatal(http.ListenAndServe(":8001", nil))
