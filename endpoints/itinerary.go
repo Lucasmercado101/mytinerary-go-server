@@ -8,6 +8,7 @@ import (
 
 type itineraryInput struct {
 	CityId     *int     `json:"cityId"`
+	AuthorId   *int     `json:"authorId"`
 	Title      string   `json:"title"`
 	Duration   *int     `json:"duration"`
 	Price      *int     `json:"price"`
@@ -23,6 +24,10 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 	// Validation
 	if input.CityId == nil {
 		http.Error(w, "Missing cityId", http.StatusBadRequest)
+		return
+	}
+	if input.AuthorId == nil {
+		http.Error(w, "Missing authorId", http.StatusBadRequest)
 		return
 	}
 	if input.Title == "" {
