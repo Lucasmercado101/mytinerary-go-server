@@ -146,7 +146,9 @@ func Register(w http.ResponseWriter, r *http.Request) {
 					}
 				}
 
-				storedImagePath := filepath.Join(imagesDir, uuid.New().String()+filepath.Ext(header.Filename))
+				var imageFileName = uuid.New().String() + filepath.Ext(header.Filename)
+
+				storedImagePath := filepath.Join(imagesDir, imageFileName)
 
 				f, err := os.Create(storedImagePath)
 				if err != nil {
@@ -174,7 +176,17 @@ func Register(w http.ResponseWriter, r *http.Request) {
 					w.WriteHeader(http.StatusInternalServerError)
 					return
 				}
-				_, err = database.Db.Exec("INSERT INTO users (username, password, profile_pic) VALUES ($1, $2, $3)", username, hash, storedImagePath)
+
+				var scheme string
+				if r.TLS != nil { // https://github.com/golang/go/issues/28940#issuecomment-441749380
+					scheme = "https"
+				} else {
+					scheme = "http"
+				}
+
+				var imageUrl = scheme + "://" + r.Host + "/static/images/" + imageFileName
+
+				_, err = database.Db.Exec("INSERT INTO users (username, password, profile_pic) VALUES ($1, $2, $3)", username, hash, imageUrl)
 
 				if err != nil {
 					// delete file
