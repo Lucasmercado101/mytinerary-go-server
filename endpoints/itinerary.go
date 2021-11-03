@@ -6,7 +6,6 @@ import (
 	"quickstart/database"
 
 	"github.com/gorilla/mux"
-	"github.com/lib/pq"
 )
 
 func Itinerary(w http.ResponseWriter, r *http.Request) {
@@ -22,8 +21,8 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 		&itinerary.Creator,
 		&itinerary.Time,
 		&itinerary.Price,
-		pq.Array(&itinerary.Activities),
-		pq.Array(&itinerary.Hashtags),
+		&itinerary.Activities,
+		&itinerary.Hashtags,
 		&itinerary.CityId,
 	)
 
