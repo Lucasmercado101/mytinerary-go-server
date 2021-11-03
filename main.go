@@ -78,7 +78,7 @@ func main() {
 	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
-	r.HandleFunc("/itinerary", endpoints.Itinerary).Methods("POST")
+	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
 
 	http.Handle("/", r)
 

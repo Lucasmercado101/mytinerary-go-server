@@ -19,7 +19,7 @@ type itineraryInput struct {
 	Activities []string `json:"activities"`
 }
 
-func Itinerary(w http.ResponseWriter, r *http.Request) {
+func Itineraries(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	var input itineraryInput
 	err := json.NewDecoder(r.Body).Decode(&input)
