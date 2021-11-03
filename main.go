@@ -82,7 +82,7 @@ func main() {
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
 	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
-	r.HandleFunc("/itinerary/{itineraryId}", endpoints.Itinerary).Methods("GET", "PUT", "DELETE", "PATCH")
+	r.HandleFunc("/itinerary/{itineraryId}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
 
 	http.Handle("/", r)
 
