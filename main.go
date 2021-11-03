@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"quickstart/database"
 	"quickstart/endpoints"
 
@@ -28,6 +29,8 @@ const (
 var Db *sql.DB
 
 func main() {
+	log.SetOutput(os.Stdout) // Set log output to standard output
+
 	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
 		"password=%s dbname=%s sslmode=disable",
 		host, port, user, password, dbname)
@@ -79,6 +82,7 @@ func main() {
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
 	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
+	r.HandleFunc("/itinerary/{itineraryId}", endpoints.Itinerary).Methods("GET", "PUT", "DELETE", "PATCH")
 
 	http.Handle("/", r)
 
