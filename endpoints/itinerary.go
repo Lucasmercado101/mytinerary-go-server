@@ -16,6 +16,8 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 
 	var itinerary database.Itinerary
 
+	// TODO: validation, if city & creator exist
+
 	database.Db.QueryRow("SELECT * FROM itinerary WHERE id = $1", itineraryId).Scan(
 		&itinerary.Id,
 		&itinerary.Title,
