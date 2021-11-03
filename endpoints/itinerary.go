@@ -1,6 +1,7 @@
 package endpoints
 
 import (
+	"encoding/json"
 	"log"
 	"net/http"
 	"quickstart/database"
@@ -26,5 +27,5 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 		&itinerary.CityId,
 	)
 
-	log.Printf("%+v\n", itinerary)
+	json.NewEncoder(w).Encode(itinerary)
 }
