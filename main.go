@@ -56,6 +56,7 @@ func main() {
 
 	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
 	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
+	r.HandleFunc("/cities/{cityId}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
 
 	// CORS
 	r.Use(func(next http.Handler) http.Handler {
