@@ -91,11 +91,13 @@ func City(w http.ResponseWriter, r *http.Request) {
 
 func CityItineraries(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-	id := mux.Vars(r)["cityId"]
+	cityId := mux.Vars(r)["cityId"]
 
-	// TODO: validation
+	switch r.Method {
+	case "GET":
+		// TODO: validation
 
-	rows, err := database.Db.Query(`
+		rows, err := database.Db.Query(`
 	SELECT id,
 		title,
 		time,
@@ -110,37 +112,76 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 				profile_pic
 			FROM users
 		) AS users ON itinerary.creator = users.user_id
-	WHERE itinerary.id = $1`, id)
+	WHERE itinerary.id = $1`, cityId)
 
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		rows.Close()
-		return
-	}
-
-	defer rows.Close()
-
-	var itineraries []itinerary
-
-	for rows.Next() {
-
-		var itinerary itinerary
-
-		err := rows.Scan(&itinerary.Id, &itinerary.Title,
-			&itinerary.Time, &itinerary.Price,
-			&itinerary.Activities, &itinerary.Hashtags,
-			&itinerary.Creator.User_id, &itinerary.Creator.Profile_pic)
 		if err != nil {
-			log.Fatal(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			rows.Close()
+			return
 		}
 
-		itineraries = append(itineraries, itinerary)
-	}
+		defer rows.Close()
 
-	if len(itineraries) == 0 {
-		w.Write([]byte("[]"))
-		return
-	}
+		var itineraries []itinerary
 
-	json.NewEncoder(w).Encode(itineraries)
+		for rows.Next() {
+
+			var itinerary itinerary
+
+			err := rows.Scan(&itinerary.Id, &itinerary.Title,
+				&itinerary.Time, &itinerary.Price,
+				&itinerary.Activities, &itinerary.Hashtags,
+				&itinerary.Creator.User_id, &itinerary.Creator.Profile_pic)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			itineraries = append(itineraries, itinerary)
+		}
+
+		if len(itineraries) == 0 {
+			w.Write([]byte("[]"))
+			return
+		}
+
+		json.NewEncoder(w).Encode(itineraries)
+
+	case "POST":
+
+		session, err := database.IsUserLoggedIn(r)
+		if err != nil {
+			switch err {
+			case database.ErrNoCookie:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			case database.ErrUnauthorized:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		var itinerary itinerary
+		decoder := json.NewDecoder(r.Body)
+		if err := decoder.Decode(&itinerary); err != nil {
+			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+			return
+		}
+
+		_, err = database.Db.Exec(`
+		INSERT INTO itinerary (title, time, price, activities, hashtags, creator, city_id)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		`, itinerary.Title, itinerary.Time, itinerary.Price,
+			itinerary.Activities, itinerary.Hashtags, session.User_id, cityId)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
 }
