@@ -97,6 +97,17 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		// TODO: validation
 
+		type itinerary struct {
+			Id         int              `json:"id"`
+			Title      string           `json:"title"`
+			Time       int              `json:"time"`
+			Price      int              `json:"price"`
+			Activities pq.StringArray   `json:"activities"`
+			Hashtags   pq.StringArray   `json:"hashtags"`
+			Creator    itineraryCreator `json:"creator"`
+			CityId     int              `json:"-"`
+		}
+
 		rows, err := database.Db.Query(`
 	SELECT id,
 		title,
@@ -105,14 +116,15 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 		activities,
 		hashtags,
 		user_id,
-    	profile_pic
+    	profile_pic,
+		city_id
 	FROM itinerary
 		INNER JOIN (
 			SELECT id as user_id,
 				profile_pic
 			FROM users
 		) AS users ON itinerary.creator = users.user_id
-	WHERE itinerary.id = $1`, cityId)
+	WHERE itinerary.city_id = $1`, cityId)
 
 		if err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
@@ -131,7 +143,7 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 			err := rows.Scan(&itinerary.Id, &itinerary.Title,
 				&itinerary.Time, &itinerary.Price,
 				&itinerary.Activities, &itinerary.Hashtags,
-				&itinerary.Creator.User_id, &itinerary.Creator.Profile_pic)
+				&itinerary.Creator.User_id, &itinerary.Creator.Profile_pic, &itinerary.CityId)
 			if err != nil {
 				log.Fatal(err)
 			}
