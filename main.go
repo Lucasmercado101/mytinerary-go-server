@@ -84,6 +84,7 @@ func main() {
 
 	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
 	r.HandleFunc("/itinerary/{itineraryId}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
+	r.HandleFunc("/itinerary/{itineraryId}/comment", endpoints.ItineraryComment)
 
 	http.Handle("/", r)
 
