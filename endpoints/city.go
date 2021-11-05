@@ -137,5 +137,10 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 		itineraries = append(itineraries, itinerary)
 	}
 
+	if len(itineraries) == 0 {
+		w.Write([]byte("[]"))
+		return
+	}
+
 	json.NewEncoder(w).Encode(itineraries)
 }
