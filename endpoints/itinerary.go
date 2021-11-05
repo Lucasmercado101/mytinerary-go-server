@@ -37,6 +37,15 @@ type itineraryCommentInput struct {
 	AuthorId int    `json:"authorId"`
 }
 
+type itineraryCommentResponse struct {
+	Id      int    `json:"id"`
+	Content string `json:"content"`
+	Creator struct {
+		CreatorId  int    `json:"creatorId"`
+		ProfilePic string `json:"profilePic"`
+	} `json:"creator"`
+}
+
 func ItineraryComment(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 
@@ -99,6 +108,41 @@ func ItineraryComment(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx.Commit()
+	err = tx.Commit()
 
+	if err != nil {
+		tx.Rollback()
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var comment itineraryCommentResponse
+
+	err = database.Db.QueryRow(`
+	SELECT id,
+		comment,
+		user_id,
+		profile_pic
+	FROM itinerary_comment
+		INNER JOIN (
+			SELECT id AS user_id,
+				profile_pic
+			FROM users
+		) AS users ON users.user_id = itinerary_comment.author_id
+	WHERE itinerary_comment.id = $1
+	`, newCommentId).Scan(
+		&comment.Id,
+		&comment.Content,
+		&comment.Creator.CreatorId,
+		&comment.Creator.ProfilePic,
+	)
+
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	json.NewEncoder(w).Encode(comment)
 }
