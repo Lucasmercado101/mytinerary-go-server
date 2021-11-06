@@ -111,7 +111,7 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 			Price      int                    `json:"price"`
 			Activities pq.StringArray         `json:"activities"`
 			Hashtags   pq.StringArray         `json:"hashtags"`
-			Comments   []ItineraryCommentJSON `json:"comments"`
+			Comments   []ItineraryCommentJSON `json:"comments,omitempty"`
 			Creator    itineraryCreator       `json:"creator"`
 			CityId     int                    `json:"-"`
 		}
