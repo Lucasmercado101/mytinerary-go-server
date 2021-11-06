@@ -76,7 +76,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var userDTO struct {
-			Id          string `json:"id"`
+			Id          int    `json:"id"`
 			Username    string `json:"username"`
 			Profile_pic string `json:"profilePic"`
 		}
