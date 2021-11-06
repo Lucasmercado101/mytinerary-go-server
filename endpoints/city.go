@@ -28,7 +28,7 @@ type itinerary struct {
 }
 
 type itineraryCreator struct {
-	User_id     int    `json:"userId"`
+	User_id     int    `json:"id"`
 	Profile_pic string `json:"profilePic"`
 }
 
