@@ -44,7 +44,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	var dbUser struct {
-		id          string
+		id          int
 		password    string
 		profile_pic sql.NullString
 	}
@@ -80,6 +80,7 @@ func Login(w http.ResponseWriter, r *http.Request) {
 			Username    string `json:"username"`
 			Profile_pic string `json:"profilePic"`
 		}
+		userDTO.Id = dbUser.id
 		userDTO.Username = creds.Username
 		userDTO.Profile_pic = dbUser.profile_pic.String
 		if dbUser.profile_pic.Valid {
