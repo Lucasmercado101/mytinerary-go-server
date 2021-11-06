@@ -94,15 +94,23 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		// TODO: validation
 
+		type ItineraryCommentJSON struct {
+			Id           int    `json:"-"`
+			Author_id    int    `json:"authorId"`
+			Itinerary_id int    `json:"itineraryId"`
+			Comment      string `json:"comment"`
+		}
+
 		type itinerary struct {
-			Id         int              `json:"id"`
-			Title      string           `json:"title"`
-			Time       int              `json:"time"`
-			Price      int              `json:"price"`
-			Activities pq.StringArray   `json:"activities"`
-			Hashtags   pq.StringArray   `json:"hashtags"`
-			Creator    itineraryCreator `json:"creator"`
-			CityId     int              `json:"-"`
+			Id         int                    `json:"id"`
+			Title      string                 `json:"title"`
+			Time       int                    `json:"time"`
+			Price      int                    `json:"price"`
+			Activities pq.StringArray         `json:"activities"`
+			Hashtags   pq.StringArray         `json:"hashtags"`
+			Comments   []ItineraryCommentJSON `json:"comments"`
+			Creator    itineraryCreator       `json:"creator"`
+			CityId     int                    `json:"-"`
 		}
 
 		rows, err := database.Db.Query(`
@@ -124,8 +132,8 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 	WHERE itinerary.city_id = $1`, cityId)
 
 		if err != nil {
+			log.Print(err)
 			w.WriteHeader(http.StatusInternalServerError)
-			rows.Close()
 			return
 		}
 
@@ -151,6 +159,54 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 		if len(itineraries) == 0 {
 			w.Write([]byte("[]"))
 			return
+		}
+
+		var itineraryIds []int
+		for _, itinerary := range itineraries {
+			itineraryIds = append(itineraryIds, itinerary.Id)
+		}
+
+		rows, err = database.Db.Query(`
+		SELECT id,
+			author_id,
+			comment,
+			itinerary_id
+		FROM itinerary_comments
+			INNER JOIN (
+				SELECT id as ic_id, author_id, comment
+				FROM itinerary_comment
+			) AS ic ON ic.ic_id = itinerary_comments.comment_id
+		WHERE itinerary_comments.itinerary_id = ANY($1::int[])
+			`, pq.Array(itineraryIds))
+
+		if err != nil {
+			log.Print(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		defer rows.Close()
+
+		var comments []ItineraryCommentJSON
+
+		for rows.Next() {
+
+			var comment ItineraryCommentJSON
+
+			err := rows.Scan(&comment.Id, &comment.Author_id, &comment.Comment, &comment.Itinerary_id)
+			if err != nil {
+				log.Fatal(err)
+			}
+
+			comments = append(comments, comment)
+		}
+
+		for index, itinerary := range itineraries {
+			for _, comment := range comments {
+				if comment.Itinerary_id == itinerary.Id {
+					itineraries[index].Comments = append(itineraries[index].Comments, comment)
+				}
+			}
 		}
 
 		json.NewEncoder(w).Encode(itineraries)
