@@ -76,10 +76,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		}
 
 		var userDTO struct {
+			Id          string `json:"id"`
 			Username    string `json:"username"`
 			Profile_pic string `json:"profile_pic"`
 		}
 		userDTO.Username = creds.Username
+		userDTO.Profile_pic = dbUser.profile_pic.String
 		if dbUser.profile_pic.Valid {
 			userDTO.Profile_pic = dbUser.profile_pic.String
 		} else {
