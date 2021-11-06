@@ -95,10 +95,13 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 		// TODO: validation
 
 		type ItineraryCommentJSON struct {
-			Id           int    `json:"-"`
-			Author_id    int    `json:"authorId"`
-			Itinerary_id int    `json:"itineraryId"`
+			Id           int    `json:"id"`
+			Itinerary_id int    `json:"-"`
 			Comment      string `json:"comment"`
+			Author       struct {
+				Id         int    `json:"id"`
+				ProfilePic string `json:"profilePic"`
+			}
 		}
 
 		type itinerary struct {
@@ -170,12 +173,21 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 		SELECT id,
 			author_id,
 			comment,
-			itinerary_id
+			itinerary_id,
+			user_id,
+			profile_pic
 		FROM itinerary_comments
 			INNER JOIN (
-				SELECT id as ic_id, author_id, comment
+				SELECT id as ic_id,
+					author_id,
+					comment
 				FROM itinerary_comment
 			) AS ic ON ic.ic_id = itinerary_comments.comment_id
+			INNER JOIN (
+				SELECT id as user_id,
+					profile_pic
+				FROM users
+			) AS users ON users.user_id = ic.author_id
 		WHERE itinerary_comments.itinerary_id = ANY($1::int[])
 			`, pq.Array(itineraryIds))
 
@@ -193,7 +205,8 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 
 			var comment ItineraryCommentJSON
 
-			err := rows.Scan(&comment.Id, &comment.Author_id, &comment.Comment, &comment.Itinerary_id)
+			err := rows.Scan(&comment.Id, &comment.Author.Id, &comment.Comment,
+				&comment.Itinerary_id, &comment.Author.Id, &comment.Author.ProfilePic)
 			if err != nil {
 				log.Fatal(err)
 			}
