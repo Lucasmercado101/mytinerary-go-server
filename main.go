@@ -84,7 +84,7 @@ func main() {
 
 	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
 	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
-	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", endpoints.ItineraryComment)
+	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", returnsJSONMiddleware(endpoints.ItineraryComment))
 
 	// TODO cron job to delete old sessions
 
