@@ -93,6 +93,11 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 			city.Country = r.Form.Get("country")
 		}
 
+		if city.Name == "" || city.Country == "" {
+			http.Error(w, "Missing name or country", http.StatusBadRequest)
+			return
+		}
+
 		log.Printf("%+v\n", city)
 
 		err = database.Db.QueryRow("INSERT INTO city (name, country) VALUES ($1, $2) RETURNING *", city.Name, city.Country).Scan(&city.Id, &city.Name, &city.Country)
