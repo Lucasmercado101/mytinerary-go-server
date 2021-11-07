@@ -39,7 +39,7 @@ func City(w http.ResponseWriter, r *http.Request) {
 
 	// Check if city exists
 	var dbCityId int
-	err := database.Db.QueryRow("SELECT id FROM cities WHERE id = $1", id).Scan(&dbCityId)
+	err := database.Db.QueryRow("SELECT id FROM city WHERE id = $1", id).Scan(&dbCityId)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(http.StatusNotFound)
