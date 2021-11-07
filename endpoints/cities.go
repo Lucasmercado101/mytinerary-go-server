@@ -42,6 +42,24 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 		}
 
 	case "POST":
+
+		_, err := database.IsUserLoggedIn(r)
+		if err != nil {
+			switch err {
+			case database.ErrNoCookie:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			case database.ErrUnauthorized:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
 		mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
 
 		if err != nil {
