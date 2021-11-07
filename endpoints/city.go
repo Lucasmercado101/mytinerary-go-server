@@ -121,7 +121,8 @@ func City(w http.ResponseWriter, r *http.Request) {
 
 		_, err := database.Db.Exec("DELETE FROM city WHERE id = $1", id)
 		if err != nil {
-			panic(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		w.WriteHeader(http.StatusNoContent)
