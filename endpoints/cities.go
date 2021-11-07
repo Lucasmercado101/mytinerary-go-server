@@ -15,7 +15,8 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 	case "GET":
 		rows, err := database.Db.Query("SELECT * FROM city")
 		if err != nil {
-			panic(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 		defer rows.Close()
 
@@ -28,7 +29,8 @@ func Cities(w http.ResponseWriter, r *http.Request) {
 			cities = append(cities, city)
 		}
 		if err := rows.Err(); err != nil {
-			panic(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
 		}
 
 		// if cities is empty, return empty array
