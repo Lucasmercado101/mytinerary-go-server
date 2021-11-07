@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"mime"
 	"net/http"
 	"quickstart/database"
 
@@ -63,15 +64,47 @@ func City(w http.ResponseWriter, r *http.Request) {
 
 	case "PUT":
 
-		var city CityJSON
-		decoder := json.NewDecoder(r.Body)
-		if err := decoder.Decode(&city); err != nil {
-			http.Error(w, "Invalid JSON", http.StatusBadRequest)
+		mediaType, _, err := mime.ParseMediaType(r.Header.Get("Content-Type"))
+
+		if err != nil {
+			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
+
+		var city CityJSON
+
+		switch mediaType {
+		case "application/json":
+			if err := json.NewDecoder(r.Body).Decode(&city); err != nil {
+				http.Error(w, "Invalid JSON", http.StatusBadRequest)
+				return
+			}
+
+		case "application/x-www-form-urlencoded":
+			if err := r.ParseForm(); err != nil {
+				http.Error(w, "Invalid form", http.StatusBadRequest)
+				return
+			}
+			city.Name = r.Form.Get("name")
+			city.Country = r.Form.Get("country")
+
+		case "multipart/form-data":
+			if err := r.ParseMultipartForm(32 << 20); err != nil {
+				http.Error(w, "Invalid form", http.StatusBadRequest)
+				return
+			}
+			city.Name = r.Form.Get("name")
+			city.Country = r.Form.Get("country")
+		}
+
+		if city.Name == "" || city.Country == "" {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
 		log.Printf("City: %+v", city)
 
-		err := database.Db.QueryRow(`
+		err = database.Db.QueryRow(`
 		UPDATE city
 		SET name = $1, country = $2
 		WHERE id = $3
