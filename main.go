@@ -8,6 +8,7 @@ import (
 	"os"
 	"quickstart/database"
 	"quickstart/endpoints"
+	"time"
 
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
@@ -27,6 +28,32 @@ const (
 )
 
 var Db *sql.DB
+
+// Cron job to delete expired sessions every 24 hours
+func deleteOldSessions() {
+	for range time.Tick(time.Hour * 24) {
+		rows, err := Db.Query("SELECT session_id, id FROM sessions WHERE expiration < NOW()")
+
+		if err != nil {
+			panic(err)
+		}
+
+		for rows.Next() {
+			var sessionId string
+			var id int
+			err = rows.Scan(&sessionId, &id)
+			if err != nil {
+				panic(err)
+			}
+			log.Println("Deleting session:", sessionId)
+			_, err := Db.Exec("DELETE FROM sessions WHERE id = $1", id)
+			if err != nil {
+				panic(err)
+			}
+		}
+	}
+
+}
 
 func main() {
 	log.SetOutput(os.Stdout) // Set log output to standard output
@@ -86,12 +113,11 @@ func main() {
 	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
 	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", returnsJSONMiddleware(endpoints.ItineraryComment))
 
-	// TODO cron job to delete old sessions
-
 	http.Handle("/", r)
 
+	// Cron job
+	go deleteOldSessions()
 	log.Fatal(http.ListenAndServe(":8001", nil))
-
 }
 
 type endpoint func(http.ResponseWriter, *http.Request)
