@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"quickstart/database"
+	"strconv"
 
 	"github.com/gorilla/mux"
 	"github.com/lib/pq"
@@ -33,8 +34,14 @@ type itineraryCreator struct {
 }
 
 func City(w http.ResponseWriter, r *http.Request) {
-	id := mux.Vars(r)["cityId"]
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
+	id := mux.Vars(r)["cityId"]
+
+	// check if id is a number
+	if _, err := strconv.Atoi(id); err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
 
 	switch r.Method {
 	case "GET":
