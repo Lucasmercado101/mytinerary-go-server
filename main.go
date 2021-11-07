@@ -105,7 +105,7 @@ func main() {
 		})
 	})
 
-	r.HandleFunc("/auth/login", endpoints.Login)
+	r.HandleFunc("/auth/login", returnsJSONMiddleware(endpoints.Login))
 	r.HandleFunc("/auth/register", endpoints.Register)
 	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
 	r.HandleFunc("/auth/logout", endpoints.Logout)
