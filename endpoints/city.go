@@ -133,9 +133,17 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	cityId := mux.Vars(r)["cityId"]
 
+	// Check if city exists
+	var dbCityId int
+	err := database.Db.QueryRow("SELECT id FROM cities WHERE id = $1", id).Scan(&dbCityId)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
 	switch r.Method {
 	case "GET":
-		// TODO: validation
 
 		type ItineraryCommentJSON struct {
 			Id           int    `json:"id"`
