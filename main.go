@@ -55,8 +55,8 @@ func main() {
 	r.PathPrefix("/static/").Handler(s)
 
 	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
-	r.HandleFunc("/cities/{cityId}", returnsJSONMiddleware(endpoints.City))
-	r.HandleFunc("/cities/{cityId}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
+	r.HandleFunc("/cities/{cityId:[0-9]+}", returnsJSONMiddleware(endpoints.City))
+	r.HandleFunc("/cities/{cityId:[0-9]+}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
 
 	// CORS
 	r.Use(func(next http.Handler) http.Handler {
@@ -83,8 +83,8 @@ func main() {
 	r.HandleFunc("/auth/logout", endpoints.Logout)
 
 	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
-	r.HandleFunc("/itinerary/{itineraryId}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
-	r.HandleFunc("/itinerary/{itineraryId}/comment", endpoints.ItineraryComment)
+	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE", "PATCH")
+	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", endpoints.ItineraryComment)
 
 	// TODO cron job to delete old sessions
 
