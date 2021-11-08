@@ -11,7 +11,6 @@ import (
 	"github.com/lib/pq"
 )
 
-//TODO ( "PUT", "DELETE")
 func Itinerary(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
 	itineraryId := mux.Vars(r)["itineraryId"]
@@ -180,6 +179,58 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 
 		w.WriteHeader(http.StatusOK)
 
+	case "DELETE":
+
+		session, err := database.IsUserLoggedIn(r)
+		if err != nil {
+			switch err {
+			case database.ErrNoCookie:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			case database.ErrUnauthorized:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		// Check if itinerary being deleted belongs to the user
+		var creator int
+		err = database.Db.QueryRow(`
+		SELECT creator
+		FROM itinerary
+		WHERE id = $1
+		`, itineraryId).Scan(&creator)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		if creator != session.User_id {
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		// It belongs to the user, delete it
+
+		_, err = database.Db.Exec(`
+		DELETE FROM itinerary
+		WHERE id = $1
+		`, itineraryId)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
 	}
 }
 
