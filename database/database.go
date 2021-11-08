@@ -12,7 +12,7 @@ var Db *sql.DB
 
 type session struct {
 	Id         string
-	User_id    string
+	User_id    int
 	Session_id string
 	Expiration time.Time
 }
