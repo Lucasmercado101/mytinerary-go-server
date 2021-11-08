@@ -152,7 +152,7 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 			Author       struct {
 				Id         int    `json:"id"`
 				ProfilePic string `json:"profilePic"`
-			}
+			} `json:"author"`
 		}
 
 		type itinerary struct {
