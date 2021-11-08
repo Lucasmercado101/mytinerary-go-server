@@ -79,13 +79,6 @@ func main() {
 
 	r := mux.NewRouter()
 
-	s := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
-	r.PathPrefix("/static/").Handler(s)
-
-	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
-	r.HandleFunc("/cities/{cityId:[0-9]+}", returnsJSONMiddleware(endpoints.City))
-	r.HandleFunc("/cities/{cityId:[0-9]+}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
-
 	// CORS
 	r.Use(func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -104,6 +97,13 @@ func main() {
 
 		})
 	})
+
+	s := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
+	r.PathPrefix("/static/").Handler(s)
+
+	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
+	r.HandleFunc("/cities/{cityId:[0-9]+}", returnsJSONMiddleware(endpoints.City))
+	r.HandleFunc("/cities/{cityId:[0-9]+}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
 
 	r.HandleFunc("/auth/login", returnsJSONMiddleware(endpoints.Login))
 	r.HandleFunc("/auth/register", endpoints.Register)
