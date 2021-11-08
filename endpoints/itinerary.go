@@ -1,35 +1,127 @@
 package endpoints
 
 import (
+	"database/sql"
 	"encoding/json"
 	"log"
 	"net/http"
 	"quickstart/database"
 
 	"github.com/gorilla/mux"
+	"github.com/lib/pq"
 )
 
+//TODO ( "PUT", "DELETE")
 func Itinerary(w http.ResponseWriter, r *http.Request) {
 	log.Printf("%s %s %s\n", r.RemoteAddr, r.Method, r.URL)
-
 	itineraryId := mux.Vars(r)["itineraryId"]
 
-	var itinerary database.Itinerary
+	switch r.Method {
+	case "GET":
+		var itinerary struct {
+			Id         int            `json:"id"`
+			Title      string         `json:"title"`
+			Creator    int            `json:"creator"`
+			Time       string         `json:"time"`
+			Price      string         `json:"price"`
+			Activities pq.StringArray `json:"activities"`
+			Hashtags   pq.StringArray `json:"hashtags"`
+			CityId     int            `json:"cityId"`
+			Comments   []struct {
+				Id           int    `json:"id"`
+				Itinerary_id int    `json:"-"`
+				Comment      string `json:"comment"`
+				Author       struct {
+					Id         int    `json:"id"`
+					ProfilePic string `json:"profilePic"`
+				} `json:"author"`
+			} `json:"comments"`
+		}
 
-	// TODO: validation, if city & creator exist
+		err := database.Db.QueryRow("SELECT * FROM itinerary WHERE id = $1", itineraryId).Scan(
+			&itinerary.Id,
+			&itinerary.Title,
+			&itinerary.Creator,
+			&itinerary.Time,
+			&itinerary.Price,
+			&itinerary.Activities,
+			&itinerary.Hashtags,
+			&itinerary.CityId,
+		)
 
-	database.Db.QueryRow("SELECT * FROM itinerary WHERE id = $1", itineraryId).Scan(
-		&itinerary.Id,
-		&itinerary.Title,
-		&itinerary.Creator,
-		&itinerary.Time,
-		&itinerary.Price,
-		&itinerary.Activities,
-		&itinerary.Hashtags,
-		&itinerary.CityId,
-	)
+		if err != nil {
+			log.Println(err)
+			// if city doesn't exist
+			if err == sql.ErrNoRows {
+				w.WriteHeader(http.StatusNotFound)
+				return
+			}
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 
-	json.NewEncoder(w).Encode(itinerary)
+		rows, err := database.Db.Query(`
+		SELECT id,
+			author_id,
+			comment,
+			itinerary_id,
+			user_id,
+			profile_pic
+		FROM itinerary_comments
+			INNER JOIN (
+				SELECT id as ic_id,
+					author_id,
+					comment
+				FROM itinerary_comment
+			) AS ic ON ic.ic_id = itinerary_comments.comment_id
+			INNER JOIN (
+				SELECT id as user_id,
+					profile_pic
+				FROM users
+			) AS users ON users.user_id = ic.author_id
+		WHERE itinerary_comments.itinerary_id = $1
+		`, itineraryId)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		defer rows.Close()
+
+		for rows.Next() {
+			var comment struct {
+				Id           int    `json:"id"`
+				Itinerary_id int    `json:"-"`
+				Comment      string `json:"comment"`
+				Author       struct {
+					Id         int    `json:"id"`
+					ProfilePic string `json:"profilePic"`
+				} `json:"author"`
+			}
+
+			err := rows.Scan(
+				&comment.Id,
+				&comment.Author.Id,
+				&comment.Comment,
+				&comment.Itinerary_id,
+				&comment.Author.Id,
+				&comment.Author.ProfilePic,
+			)
+
+			if err != nil {
+				log.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+
+			itinerary.Comments = append(itinerary.Comments, comment)
+		}
+
+		json.NewEncoder(w).Encode(itinerary)
+
+	}
 }
 
 type itineraryCommentInput struct {
