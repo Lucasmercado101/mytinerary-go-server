@@ -6,22 +6,9 @@ import (
 	"log"
 	"net/http"
 	"time"
-
-	"github.com/lib/pq"
 )
 
 var Db *sql.DB
-
-type Itinerary struct {
-	Id         int
-	Title      string
-	Creator    int
-	Time       string
-	Price      string
-	Activities pq.StringArray
-	Hashtags   pq.StringArray
-	CityId     int
-}
 
 type session struct {
 	Id         string
