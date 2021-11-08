@@ -121,6 +121,65 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 
 		json.NewEncoder(w).Encode(itinerary)
 
+	case "PUT":
+
+		_, err := database.IsUserLoggedIn(r)
+		if err != nil {
+			switch err {
+			case database.ErrNoCookie:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			case database.ErrUnauthorized:
+				w.WriteHeader(http.StatusUnauthorized)
+				return
+
+			default:
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		var itinerary struct {
+			Title      string         `json:"title"`
+			Time       int            `json:"time"`
+			Price      int            `json:"price"`
+			Activities pq.StringArray `json:"activities"`
+			Hashtags   pq.StringArray `json:"hashtags"`
+		}
+
+		err = json.NewDecoder(r.Body).Decode(&itinerary)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+
+		_, err = database.Db.Exec(`
+		UPDATE itinerary
+		SET title = $1,
+			time = $2,
+			price = $3,
+			activities = $4,
+			hashtags = $5
+		WHERE id = $6
+		`,
+			itinerary.Title,
+			itinerary.Time,
+			itinerary.Price,
+			itinerary.Activities,
+			itinerary.Hashtags,
+			itineraryId)
+
+		if err != nil {
+			log.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		w.WriteHeader(http.StatusOK)
+
 	}
 }
 
