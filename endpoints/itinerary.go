@@ -31,8 +31,8 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 				Itinerary_id int    `json:"-"`
 				Comment      string `json:"comment"`
 				Author       struct {
-					Id         int    `json:"id"`
-					ProfilePic string `json:"profilePic"`
+					Id         int            `json:"id"`
+					ProfilePic sql.NullString `json:"profilePic"`
 				} `json:"author"`
 			} `json:"comments"`
 		}
@@ -95,8 +95,8 @@ func Itinerary(w http.ResponseWriter, r *http.Request) {
 				Itinerary_id int    `json:"-"`
 				Comment      string `json:"comment"`
 				Author       struct {
-					Id         int    `json:"id"`
-					ProfilePic string `json:"profilePic"`
+					Id         int            `json:"id"`
+					ProfilePic sql.NullString `json:"profilePic"`
 				} `json:"author"`
 			}
 
@@ -243,8 +243,8 @@ type itineraryCommentResponse struct {
 	Id      int    `json:"id"`
 	Content string `json:"content"`
 	Creator struct {
-		CreatorId  int    `json:"creatorId"`
-		ProfilePic string `json:"profilePic"`
+		CreatorId  int            `json:"creatorId"`
+		ProfilePic sql.NullString `json:"profilePic"`
 	} `json:"creator"`
 }
 
