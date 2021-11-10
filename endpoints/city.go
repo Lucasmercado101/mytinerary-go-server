@@ -29,8 +29,8 @@ type itinerary struct {
 }
 
 type itineraryCreator struct {
-	User_id     int    `json:"id"`
-	Profile_pic string `json:"profilePic"`
+	User_id     int            `json:"id"`
+	Profile_pic sql.NullString `json:"profilePic"`
 }
 
 func City(w http.ResponseWriter, r *http.Request) {
@@ -151,8 +151,8 @@ func CityItineraries(w http.ResponseWriter, r *http.Request) {
 			Itinerary_id int    `json:"-"`
 			Comment      string `json:"comment"`
 			Author       struct {
-				Id         int    `json:"id"`
-				ProfilePic string `json:"profilePic"`
+				Id         int            `json:"id"`
+				ProfilePic sql.NullString `json:"profilePic"`
 			} `json:"author"`
 		}
 
