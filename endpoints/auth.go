@@ -78,15 +78,12 @@ func Login(w http.ResponseWriter, r *http.Request) {
 		var userDTO struct {
 			Id          int    `json:"id"`
 			Username    string `json:"username"`
-			Profile_pic string `json:"profilePic"`
+			Profile_pic string `json:"profilePic,omitempty"`
 		}
 		userDTO.Id = dbUser.id
 		userDTO.Username = creds.Username
-		userDTO.Profile_pic = dbUser.profile_pic.String
 		if dbUser.profile_pic.Valid {
 			userDTO.Profile_pic = dbUser.profile_pic.String
-		} else {
-			userDTO.Profile_pic = ""
 		}
 
 		json.NewEncoder(w).Encode(userDTO)
