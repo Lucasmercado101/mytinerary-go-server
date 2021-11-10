@@ -102,18 +102,18 @@ func main() {
 	s := http.StripPrefix("/static/", http.FileServer(http.Dir("./static/")))
 	r.PathPrefix("/static/").Handler(s)
 
-	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities)).Methods("GET", "POST")
-	r.HandleFunc("/cities/{cityId:[0-9]+}", returnsJSONMiddleware(endpoints.City)).Methods("GET", "PUT", "DELETE")
-	r.HandleFunc("/cities/{cityId:[0-9]+}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries)).Methods("GET", "POST")
+	r.HandleFunc("/cities", returnsJSONMiddleware(endpoints.Cities))
+	r.HandleFunc("/cities/{cityId:[0-9]+}", returnsJSONMiddleware(endpoints.City))
+	r.HandleFunc("/cities/{cityId:[0-9]+}/itinerary", returnsJSONMiddleware(endpoints.CityItineraries))
 
-	r.HandleFunc("/auth/login", returnsJSONMiddleware(endpoints.Login)).Methods("POST")
-	r.HandleFunc("/auth/register", endpoints.Register).Methods("POST")
-	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn).Methods("GET")
-	r.HandleFunc("/auth/logout", endpoints.Logout).Methods("POST")
+	r.HandleFunc("/auth/login", returnsJSONMiddleware(endpoints.Login))
+	r.HandleFunc("/auth/register", endpoints.Register)
+	r.HandleFunc("/auth/isLoggedIn", endpoints.IsLoggedIn)
+	r.HandleFunc("/auth/logout", endpoints.Logout)
 
-	r.HandleFunc("/itinerary", endpoints.Itineraries).Methods("POST")
-	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}", returnsJSONMiddleware(endpoints.Itinerary)).Methods("GET", "PUT", "DELETE")
-	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", returnsJSONMiddleware(endpoints.ItineraryComment)).Methods("POST")
+	r.HandleFunc("/itinerary", endpoints.Itineraries)
+	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}", returnsJSONMiddleware(endpoints.Itinerary))
+	r.HandleFunc("/itinerary/{itineraryId:[0-9]+}/comment", returnsJSONMiddleware(endpoints.ItineraryComment))
 
 	http.Handle("/", r)
 
